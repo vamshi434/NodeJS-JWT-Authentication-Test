@@ -26,63 +26,97 @@
             </div>
         </main>
     </div>
-    
+
     <script>
         function login() {
             const data = {
                 username: document.getElementById('username').value,
                 password: document.getElementById('password').value,
             };
-            axios.post('/api/login',data)
+            axios.post('/api/login', data)
                 .then(res => {
                     document.getElementById('username').value = '';
-                    document.getElementById('password').value='';
-                    if(res && res.data && res.data.success) {
+                    document.getElementById('password').value = '';
+                    if (res && res.data && res.data.success) {
                         localStorage.setItem('jwt', res.data.token);
                         getDashboard();
                     }
                 });
         }
 
-        function getDashboard(){
+        function getDashboard() {
             axios.get('/api/dashboard', {
-                headers:{
+                headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
                 }
             }).then(res => {
-                if(res && res.data && res.data.success){
+                if (res && res.data && res.data.success) {
                     document.querySelector('h1.row').innerHTML = 'Dashboard';
                     document.querySelector('main').innerHTML = res.data.myContent;
-                    history.pushState(null, null, '/api/dashboard'); 
+                    history.pushState(null, '', '/dashboard');
                 }
-            }).catch(error => { //Handling expired Tokens
+            }).catch(error => {
                 if (error.response && error.response.status === 401) {
                     localStorage.removeItem('jwt');
-                    window.location.href = '/';
+                    loadLoginPage();
                 }
             });
         }
 
-        //new api settings
-        function getSettings(){
+        function getSettings() {
             axios.get('/api/settings', {
-                headers:{
+                headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
                 }
             }).then(res => {
-                if(res && res.data && res.data.success){
+                if (res && res.data && res.data.success) {
                     document.querySelector('h1.row').innerHTML = 'Settings';
                     document.querySelector('main').innerHTML = res.data.myContent;
-                    history.pushState(null, null, '/api/settings'); 
+                    history.pushState(null, '', '/settings');
                 }
-            }).catch(error => { //Token Expiry 
+            }).catch(error => {
                 if (error.response && error.response.status === 401) {
                     localStorage.removeItem('jwt');
-                    window.location.href = '/';
+                    loadLoginPage();
                 }
             });
         }
 
+        function loadLoginPage() {
+            document.querySelector('h1.row').innerHTML = 'Login Page';
+            document.querySelector('main').innerHTML = `
+                <div class="row" style="margin-bottom: 15px;">
+                    <label for="username" style="margin-right: 10px; font-weight: bold;">Username</label>
+                    <input type="text" name="username" id="username" style="padding: 5px; width: 200px; border-radius: 5px; border: 1px solid #ccc;">
+                </div>
+                <div class="row" style="margin-bottom: 15px;">
+                    <label for="password" style="margin-right: 12px; font-weight: bold;">Password</label>
+                    <input type="password" name="password" id="password" style="padding: 5px; width: 200px; border-radius: 5px; border: 1px solid #ccc;">
+                </div>
+                <div>
+                    <button onclick="login()" style="padding: 8px 12px; margin-right: 5px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Login</button>
+                    <button onclick="getDashboard()" style="padding: 8px 12px; margin-right: 5px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">Get Dashboard</button>
+                    <button onclick="getSettings()" style="padding: 8px 12px; background-color: #FF9800; color: white; border: none; border-radius: 5px; cursor: pointer;">Get Settings</button>
+                </div>
+            `;
+        }
+
+        window.onload = function() {
+            const token = localStorage.getItem('jwt');
+            const currentPath = window.location.pathname;
+
+            if (token) {
+                if (currentPath === '/dashboard') {
+                    getDashboard();
+                } else if (currentPath === '/settings') {
+                    getSettings();
+                } else {
+                    loadLoginPage();
+                }
+            } else {
+                loadLoginPage();
+            }
+        };
     </script>
 </body>
 </html>
